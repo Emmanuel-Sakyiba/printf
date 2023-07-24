@@ -57,9 +57,31 @@ int _printf(const char *format, ...)
 			num_chars_printed++;
 		}
 
+<<<<<<< HEAD
 		format++;
 	}
 
 	va_end(args);
 	return (num_chars_printed);
+=======
+			while (*str != '\0')
+			{
+				putchar(*str);
+				count++;
+				str++;
+			}
+		}
+
+		else
+			putchar(*format);
+		format++;
+		count++;
+	}
+	{
+
+		va_end(args);
+		return (count);
+
+	}
+>>>>>>> bdfcaafd23397861570825d1289e38bc9719ebf3
 }
