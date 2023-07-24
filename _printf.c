@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdargs.h>
+#include <stdarg.h>
 #include "main.h"
 /**
  * _printf - prints
@@ -7,7 +7,7 @@
  *
  * Return: number of characters printed
 */
-int _printf(const char *format, ...);
+int _printf(const char *format, ...)
 {
 	va_lists args;
 	char ch;
@@ -19,7 +19,7 @@ int _printf(const char *format, ...);
 	while (*format != '\0')
 	{
 		if (*format == %)
-		Format++;
+		format++;
 		switch (*format)
 		{
 			case 'c';
@@ -28,7 +28,7 @@ int _printf(const char *format, ...);
 				_putchar(ch);
 				num_cp++;
 			}
-			Break;
+			break;
 
 			case 's';
 			{
@@ -36,7 +36,7 @@ int _printf(const char *format, ...);
 				while (*str != '\0')
 				{
 					_putchar(*str);
-					tr++;
+					str++;
 					num_cp++;
 				}
 			}
@@ -46,7 +46,7 @@ int _printf(const char *format, ...);
 				_putchar( % );
 				num_cp++;
 				break;
-			default:
+			default;
 
 				break;
 		}
