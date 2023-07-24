@@ -1,56 +1,65 @@
 #include <stdio.h>
+#include <stdarg.h>
 #include "main.h"
 
-int _printf(const char *format, ...);
-
 /**
- * _printf - a function that produces output according to a format
- * @format: the type of output
- * A project performed by Emmanuel Effah and Benjamin Assibi
+ * _printf - prints
+ * @format: a pointer to format
  *
- * Return: number of characters printed
+ * Return: printf char
  */
 int _printf(const char *format, ...)
 {
-	int count = 0;
-
 	va_list args;
+	char ch;
+	const char *str;
+
+	int num_chars_printed = 0;
 
 	va_start(args, format);
 
 	while (*format != '\0')
 	{
-
 		if (*format == '%')
 		{
-			putchar('%');
 			format++;
-		}
-		else if (*format == 'c')
-		{
-			char ch = va_arg(args, int);
-
-			putchar(ch);
-			count++;
-		}
-		else if (*format == 's')
-		{
-			char *str = va_arg(args, char *);
-
-			while (*str != '\0')
+			switch (*format)
 			{
-				putchar(*str);
-				count++;
-				str++;
+				case 'c':
+					{
+						ch = (char)va_arg(args, int);
+						putchar(ch);
+						num_chars_printed++;
+					}
+					break;
+				case 's':
+					{
+						str = va_arg(args, const char *);
+						while (*str != '\0')
+						{
+							putchar(*str);
+							str++;
+							num_chars_printed++;
+						}
+					}
+					break;
+				case '%':
+					putchar('%');
+					num_chars_printed++;
+					break;
+				default:
+					break;
 			}
 		}
-	}
-	else
-		putchar(*format);
-	format++;
-	count++;
-}
-va_end(args);
-return (count);
+		else
+		{
+			putchar(*format);
+			num_chars_printed++;
+		}
 
+		format++;
+	}
+
+	va_end(args);
+	return (num_chars_printed);
 }
