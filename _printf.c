@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 #include "main.h"
 
 int _printf(const char *format, ...);
@@ -44,13 +45,16 @@ int _printf(const char *format, ...)
 				str++;
 			}
 		}
-	}
-	else
-		putchar(*format);
-	format++;
-	count++;
-}
-va_end(args);
-return (count);
 
+		else
+			putchar(*format);
+		format++;
+		count++;
+	}
+	{
+
+		va_end(args);
+		return (count);
+
+	}
 }
