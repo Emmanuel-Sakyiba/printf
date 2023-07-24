@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <stdargs.h>
 #include "main.h"
+
 int _printf(const char *format, ...);
 
 /**
@@ -12,10 +12,11 @@ int _printf(const char *format, ...);
  */
 int _printf(const char *format, ...)
 {
-	va_list value;
-	va_start(value, format);
 	int count = 0;
-	char c;
+
+	va_list args;
+
+	va_start(args, format);
 
 	while (*format != '\0')
 	{
@@ -23,20 +24,22 @@ int _printf(const char *format, ...)
 		{
 			format++;
 
-			if (*format == '%') // handle doubele %%
+			if (*format == '%')
 			{
 				putchar('%');
-				count++;
+				format++;
 			}
-			else if (*format == 'c') //handle %c
+			else if (*format == 'c')
 			{
-				char ch = va_arg(value, int);
+				char ch = va_arg(args, int);
+
 				putchar(ch);
 				count++;
 			}
-			else if (*format == 's') //handle %s
+			else if (*format == 's')
 			{
-				char *str = va_arg(value, char *);
+				char *str = va_arg(args, char *);
+
 				while (*str != '\0')
 				{
 					putchar(*str);
@@ -47,24 +50,9 @@ int _printf(const char *format, ...)
 		}
 		else
 			putchar(*format);
-		count++;
-
 		format++;
+		count++;
 	}
-	va_end(value);
+	va_end(args);
 	return (count);
-}
-
-int main()
-{
-	char v = 'a';
-	char str[] = "man";
-	int y;
-
-	y = _printf("the effah & Assibi team %c  %s\n", v, str);
-	printf("the effah & Assibi team %c  %s\n", v, str);
-	printf("count is: %d", y);
-
-	return 0;
-
 }
