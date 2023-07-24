@@ -1,65 +1,70 @@
 #include <stdio.h>
 #include <stdargs.h>
 #include "main.h"
+int _printf(const char *format, ...);
+
 /**
- * _printf - prints
+ * _printf - a function that produces output according to a format
  * @format: the type of output
+ * A project performed by Emmanuel Effah and Benjamin Assibi
  *
  * Return: number of characters printed
-*/
-int _printf(const char *format, ...);
+ */
+int _printf(const char *format, ...)
 {
-	va_lists args;
-	char ch;
-	int num_cp = 0;
-	const char *str;
-
-	va_start(format, args);
+	va_list value;
+	va_start(value, format);
+	int count = 0;
+	char c;
 
 	while (*format != '\0')
 	{
-		if (*format == %)
-		Format++;
-		switch (*format)
+		if (*format == '%')
 		{
-			case 'c';
-			{
-				ch = va_arg(arg, int);
-				_putchar(ch);
-				num_cp++;
-			}
-			Break;
+			format++;
 
-			case 's';
+			if (*format == '%') // handle doubele %%
 			{
-				*str = va_arg(args, const char);
+				putchar('%');
+				count++;
+			}
+			else if (*format == 'c') //handle %c
+			{
+				char ch = va_arg(value, int);
+				putchar(ch);
+				count++;
+			}
+			else if (*format == 's') //handle %s
+			{
+				char *str = va_arg(value, char *);
 				while (*str != '\0')
 				{
-					_putchar(*str);
-					tr++;
-					num_cp++;
+					putchar(*str);
+					count++;
+					str++;
 				}
 			}
-			break;
-
-			case '%';
-				_putchar( % );
-				num_cp++;
-				break;
-			default:
-
-				break;
 		}
+		else
+			putchar(*format);
+		count++;
+
+		format++;
 	}
+	va_end(value);
+	return (count);
+}
 
-	else
-	{
-		_putchar(*format);
-		num_cp++;
-	}
-	format++;
+int main()
+{
+	char v = 'a';
+	char str[] = "man";
+	int y;
 
-	va_end(args);
+	y = _printf("the effah & Assibi team %c  %s\n", v, str);
+	printf("the effah & Assibi team %c  %s\n", v, str);
+	printf("count is: %d", y);
 
-	return (num_cp);
+	return 0;
+
 }
