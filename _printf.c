@@ -28,7 +28,7 @@ int _printf(const char *format, ...)
 				case 'c':
 					{
 						ch = (char)va_arg(args, int);
-						putchar(ch);
+						_putchar(ch);
 						num_chars_printed++;
 					}
 					break;
@@ -37,14 +37,18 @@ int _printf(const char *format, ...)
 						str = va_arg(args, const char *);
 						while (*str != '\0')
 						{
-							putchar(*str);
+							_putchar(*str);
 							str++;
 							num_chars_printed++;
 						}
 					}
 					break;
 				case '%':
-					putchar('%');
+					_putchar('%');
+					num_chars_printed++;
+					break;
+					case 'r';
+					_putchar('%');
 					num_chars_printed++;
 					break;
 				default:
@@ -53,7 +57,7 @@ int _printf(const char *format, ...)
 		}
 		else
 		{
-			putchar(*format);
+			_putchar(*format);
 			num_chars_printed++;
 		}
 
