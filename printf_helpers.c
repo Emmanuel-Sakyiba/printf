@@ -1,11 +1,9 @@
 #include "printf_helpers.h"
 #include <stdarg.h>
 
-/* Implementation of the helper functions */
-
 char get_flags(const char *format, int *index) 
 {
-    /* Implement the logic to extract flags from the format string */
+
 }
 
 int get_width(const char *format, int *index, va_list args) 

@@ -1,4 +1,5 @@
 #include "main.h"
+#include "printf_helpers.h"
 #include <stdarg.h>
 #include <unistd.h>
 #define BUFF_SIZE 1024
