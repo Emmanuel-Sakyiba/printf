@@ -16,4 +16,4 @@ char get_size(const char *format, int *index);
 int handle_print(const char *format, int *index, va_list args, char *buffer,
                  char flags, int width, int precision, char size);
 
-#endif
+#endif/*MAIN_H*/
