@@ -30,6 +30,27 @@ int print_number2(int n)
 }
 
 /**
+ * print_binary - Prints an unsigned integer in binary format
+ * @n: The unsigned integer to print as binary
+ *
+ * Return: Number of characters printed
+ */
+int print_binary(unsigned int n)
+{
+	int printed_chars = 0;
+	unsigned int mask = 1;
+	int bits = sizeof(n) * 8;
+
+	while (bits--)
+	{
+		printed_chars += _putchar((n & mask) ? '1' : '0');
+		mask <<= 1;
+	}
+
+	return (printed_chars);
+}
+
+/**
  * _printf - Printf function
  * @format: Format string
  *
@@ -40,6 +61,7 @@ int _printf(const char *format, ...)
 	int i, printed_chars = 0;
 	va_list args;
 	int num;
+	unsigned int nums;
 
 	if (format == NULL)
 		return (-1);
@@ -61,6 +83,12 @@ int _printf(const char *format, ...)
 				num = va_arg(args, int);
 				printed_chars += print_number2(num);
 			}
+			else if (format[i] == 'b')
+			{
+				/* Print an unsigned int as binary */
+				nums = va_arg(args, unsigned int);
+				printed_chars += print_binary(nums);
+			}
 		}
 	}
 
@@ -68,3 +96,4 @@ int _printf(const char *format, ...)
 
 	return (printed_chars);
 }
+
