@@ -1,332 +1,252 @@
-#include <stdio.h>
-#include <stdarg.h>
 #include "main.h"
-#include <unistd.h>
 
+/************************* WRITE HANDLE *************************/
 /**
- * _putchar - Prints a character to the buffer
- * @c: The character to print
- * @buffer: The buffer to store the character
- * @buff_ind: Index at which to add the character
+ * handle_write_char - Prints a string
+ * @c: char types.
+ * @buffer: Buffer array to handle print
+ * @flags:  Calculates active flags.
+ * @width: get width.
+ * @precision: precision specifier
+ * @size: Size specifier
  *
- * Return: On success, the character is returned.
- *         On error, -1 is returned.
+ * Return: Number of chars printed.
  */
-int _puts(char c, char *buffer, int *buff_ind)
-{
-	if (*buff_ind >= 1024)
+int handle_write_char(char c, char buffer[],
+	int flags, int width, int precision, int size)
+{ /* char is stored at left and paddind at buffer's right */
+	int i = 0;
+	char padd = ' ';
+
+	UNUSED(precision);
+	UNUSED(size);
+
+	if (flags & F_ZERO)
+		padd = '0';
+
+	buffer[i++] = c;
+	buffer[i] = '\0';
+
+	if (width > 1)
 	{
-		write(1, buffer, *buff_ind);
-		*buff_ind = 0;
-	}
-	buffer[*buff_ind] = c;
-	(*buff_ind)++;
-	return (1);
-}
+		buffer[BUFF_SIZE - 1] = '\0';
+		for (i = 0; i < width - 1; i++)
+			buffer[BUFF_SIZE - i - 2] = padd;
 
-/**
- * print_number - Prints an integer to the buffer
- * @n: The integer to print
- * @buffer: The buffer to store the integer
- * @buff_ind: Index at which to add the integer
- * @base: The base for conversion
- * @digits: The digits for the base
- *
- * Return: Number of characters printed
- */
-int print_number(unsigned long int n, char *buffer, int *buff_ind, int base,
-		const char *digits)
-{
-	int printed_chars = 0;
-
-	if (n / base != 0)
-		printed_chars += print_number(n / base, buffer, buff_ind, base, digits);
-
-	printed_chars += _puts(digits[n % base], buffer, buff_ind);
-
-	return (printed_chars);
-}
-
-/**
- * print_string - Prints a string to the buffer
- * @str: The string to print
- * @buffer: The buffer to store the string
- * @buff_ind: Index at which to add the string
- *
- * Return: Number of characters printed
- */
-int print_string(char *str, char *buffer, int *buff_ind)
-{
-	int i, printed_chars = 0;
-	unsigned char ch;
-
-	if (str == NULL)
-		str = "(null)";
-
-	for (i = 0; str[i] != '\0'; i++)
-	{
-		ch = str[i];
-		if (ch < 32 || ch >= 127)
-		{
-			/* Print non-printable characters as \x followed by the ASCII code value in hexadecimal */
-			printed_chars += _puts('\\', buffer, buff_ind);
-			printed_chars += _puts('x', buffer, buff_ind);
-			printed_chars += print_number(ch, buffer, buff_ind, 16, "0123456789ABCDEF");
-		}
+		if (flags & F_MINUS)
+			return (write(1, &buffer[0], 1) +
+					write(1, &buffer[BUFF_SIZE - i - 1], width - 1));
 		else
-		{
-			/* Print printable characters normally */
-			printed_chars += _puts(ch, buffer, buff_ind);
-		}
+			return (write(1, &buffer[BUFF_SIZE - i - 1], width - 1) +
+					write(1, &buffer[0], 1));
 	}
 
-	return (printed_chars);
+	return (write(1, &buffer[0], 1));
+}
+
+/************************* WRITE NUMBER *************************/
+/**
+ * write_number - Prints a string
+ * @is_negative: Lista of arguments
+ * @ind: char types.
+ * @buffer: Buffer array to handle print
+ * @flags:  Calculates active flags
+ * @width: get width.
+ * @precision: precision specifier
+ * @size: Size specifier
+ *
+ * Return: Number of chars printed.
+ */
+int write_number(int is_negative, int ind, char buffer[],
+	int flags, int width, int precision, int size)
+{
+	int length = BUFF_SIZE - ind - 1;
+	char padd = ' ', extra_ch = 0;
+
+	UNUSED(size);
+
+	if ((flags & F_ZERO) && !(flags & F_MINUS))
+		padd = '0';
+	if (is_negative)
+		extra_ch = '-';
+	else if (flags & F_PLUS)
+		extra_ch = '+';
+	else if (flags & F_SPACE)
+		extra_ch = ' ';
+
+	return (write_num(ind, buffer, flags, width, precision,
+		length, padd, extra_ch));
 }
 
 /**
- * _printf - Printf function
- * @format: Format string
+ * write_num - Write a number using a bufffer
+ * @ind: Index at which the number starts on the buffer
+ * @buffer: Buffer
+ * @flags: Flags
+ * @width: width
+ * @prec: Precision specifier
+ * @length: Number length
+ * @padd: Pading char
+ * @extra_c: Extra char
  *
- * Return: Number of characters printed
+ * Return: Number of printed chars.
  */
-int _printf(const char *format, ...)
+int write_num(int ind, char buffer[],
+	int flags, int width, int prec,
+	int length, char padd, char extra_c)
 {
-	int i, width = 0, precision = -1, printed_chars = 0, buff_ind = 0;
-	va_list args;
-	char buffer[1024];
+	int i, padd_start = 1;
 
-	if (format == NULL)
-		return (-1);
-
-	va_start(args, format);
-
-	for (i = 0; format[i] != '\0'; i++)
+	if (prec == 0 && ind == BUFF_SIZE - 2 && buffer[ind] == '0' && width == 0)
+		return (0); /* printf(".0d", 0)  no char is printed */
+	if (prec == 0 && ind == BUFF_SIZE - 2 && buffer[ind] == '0')
+		buffer[ind] = padd = ' '; /* width is displayed with padding ' ' */
+	if (prec > 0 && prec < length)
+		padd = ' ';
+	while (prec > length)
+		buffer[--ind] = '0', length++;
+	if (extra_c != 0)
+		length++;
+	if (width > length)
 	{
-		if (format[i] != '%')
+		for (i = 1; i < width - length + 1; i++)
+			buffer[i] = padd;
+		buffer[i] = '\0';
+		if (flags & F_MINUS && padd == ' ')/* Asign extra char to left of buffer */
 		{
-			printed_chars += _puts(format[i], buffer, &buff_ind);
+			if (extra_c)
+				buffer[--ind] = extra_c;
+			return (write(1, &buffer[ind], length) + write(1, &buffer[1], i - 1));
 		}
-		else
+		else if (!(flags & F_MINUS) && padd == ' ')/* extra char to left of buff */
 		{
-			i++; /* Move past the '%' character */
-			while (format[i] == ' ' || format[i] == '+' || format[i] == '#' || format[i] == '0' || format[i] == '-')
-			{
-				/* Handle flag characters '+', ' ', '#', '0', and '-' if they appear before the conversion specifier */
-				if (format[i] == '-')
-					width = -1;
-				i++;
-			}
-			/* Handle field width */
-			while (format[i] >= '0' && format[i] <= '9')
-			{
-				if (width >= 0)
-					width = width * 10 + (format[i] - '0');
-				else
-					precision = precision * 10 + (format[i] - '0');
-				i++;
-			}
-			if (width < 0)
-			{
-				width = -width;
-				/* Left align with '-' flag */
-			}
+			if (extra_c)
+				buffer[--ind] = extra_c;
+			return (write(1, &buffer[1], i - 1) + write(1, &buffer[ind], length));
+		}
+		else if (!(flags & F_MINUS) && padd == '0')/* extra char to left of padd */
+		{
+			if (extra_c)
+				buffer[--padd_start] = extra_c;
+			return (write(1, &buffer[padd_start], i - padd_start) +
+				write(1, &buffer[ind], length - (1 - padd_start)));
+		}
+	}
+	if (extra_c)
+		buffer[--ind] = extra_c;
+	return (write(1, &buffer[ind], length));
+}
 
-			if (format[i] == '.')
-			{
-				i++; /* Move past the '.' character */
-				precision = 0;
-				while (format[i] >= '0' && format[i] <= '9')
-				{
-					precision = precision * 10 + (format[i] - '0');
-					i++;
-				}
-			}
+/**
+ * write_unsgnd - Writes an unsigned number
+ * @is_negative: Number indicating if the num is negative
+ * @ind: Index at which the number starts in the buffer
+ * @buffer: Array of chars
+ * @flags: Flags specifiers
+ * @width: Width specifier
+ * @precision: Precision specifier
+ * @size: Size specifier
+ *
+ * Return: Number of written chars.
+ */
+int write_unsgnd(int is_negative, int ind,
+	char buffer[],
+	int flags, int width, int precision, int size)
+{
+	/* The number is stored at the bufer's right and starts at position i */
+	int length = BUFF_SIZE - ind - 1, i = 0;
+	char padd = ' ';
 
-			switch (format[i])
-			{
-				case 'c':
-					/* Print a character */
-					{
-						char ch = va_arg(args, int);
-						printed_chars += _puts(ch, buffer, &buff_ind);
-					}
-					break;
-				case 's':
-					/* Print a string */
-					{
-						char *str = va_arg(args, char *);
-						int len = 0;
-						if (str == NULL)
-							str = "(null)";
-						while (str[len] != '\0')
-							len++;
-						if (precision >= 0 && precision < len)
-							len = precision;
-						if (width > len)
-						{
-							int spaces = width - len;
-							while (spaces--)
-								printed_chars += _puts(' ', buffer, &buff_ind);
-						}
-						printed_chars += print_string(str, buffer, &buff_ind);
-					}
-					break;
-				case '%':
-					/* Print the '%' character */
-					printed_chars += _puts('%', buffer, &buff_ind);
-					break;
-				case 'd':
-				case 'i':
-					/* Print a signed integer */
-					{
-						long int num = va_arg(args, int);
-						int len = 0, num_copy = num;
-						while (num_copy != 0)
-						{
-							len++;
-							num_copy /= 10;
-						}
-						if (num < 0)
-							len++; /* Account for the negative sign */
-						if (precision >= 0 && precision > len)
-							precision = precision - len;
-						else
-							precision = 0;
-						if (width > len + precision)
-						{
-							int spaces = width - (len + precision);
-							while (spaces--)
-								printed_chars += _puts(' ', buffer, &buff_ind);
-						}
-						if (num < 0)
-						{
-							num = -num;
-							printed_chars += _puts('-', buffer, &buff_ind);
-						}
-						while (precision--)
-							printed_chars += _puts('0', buffer, &buff_ind);
-						printed_chars += print_number(num, buffer, &buff_ind, 10, "0123456789");
-					}
-					break;
-				case 'u':
-					/* Print an unsigned integer */
-					{
-						unsigned long int num = va_arg(args, unsigned int);
-						int len = 0, num_copy = num;
-						while (num_copy != 0)
-						{
-							len++;
-							num_copy /= 10;
-						}
-						if (precision >= 0 && precision > len)
-							precision = precision - len;
-						else
-							precision = 0;
-						if (width > len + precision)
-						{
-							int spaces = width - (len + precision);
-							while (spaces--)
-								printed_chars += _puts(' ', buffer, &buff_ind);
-						}
-						while (precision--)
-							printed_chars += _puts('0', buffer, &buff_ind);
-						printed_chars += print_number(num, buffer, &buff_ind, 10, "0123456789");
-					}
-					break;
-				case 'o':
-					/* Print an octal number */
-					{
-						unsigned long int num = va_arg(args, unsigned int);
-						int len = 0, num_copy = num;
-						while (num_copy != 0)
-						{
-							len++;
-							num_copy /= 8;
-						}
-						if (precision >= 0 && precision > len)
-							precision = precision - len;
-						else
-							precision = 0;
-						if (width > len + precision)
-						{
-							int spaces = width - (len + precision);
-							while (spaces--)
-								printed_chars += _puts(' ', buffer, &buff_ind);
-						}
-						while (precision--)
-							printed_chars += _puts('0', buffer, &buff_ind);
-						printed_chars += print_number(num, buffer, &buff_ind, 8, "01234567");
-					}
-					break;
-				case 'x':
-					/* Print a lowercase hexadecimal number */
-					{
-						unsigned long int num = va_arg(args, unsigned int);
-						int len = 0, num_copy = num;
-						while (num_copy != 0)
-						{
-							len++;
-							num_copy /= 16;
-						}
-						if (precision >= 0 && precision > len)
-							precision = precision - len;
-						else
-							precision = 0;
-						if (width > len + precision)
-						{
-							int spaces = width - (len + precision);
-							while (spaces--)
-								printed_chars += _puts(' ', buffer, &buff_ind);
-						}
-						while (precision--)
-							printed_chars += _puts('0', buffer, &buff_ind);
-						printed_chars += print_number(num, buffer, &buff_ind, 16, "0123456789abcdef");
-					}
-					break;
-				case 'X':
-					/* Print an uppercase hexadecimal number */
-					{
-						unsigned long int num = va_arg(args, unsigned int);
-						int len = 0, num_copy = num;
-						while (num_copy != 0)
-						{
-							len++;
-							num_copy /= 16;
-						}
-						if (precision >= 0 && precision > len)
-							precision = precision - len;
-						else
-							precision = 0;
-						if (width > len + precision)
-						{
-							int spaces = width - (len + precision);
-							while (spaces--)
-								printed_chars += _puts(' ', buffer, &buff_ind);
-						}
-						while (precision--)
-							printed_chars += _puts('0', buffer, &buff_ind);
-						printed_chars += print_number(num, buffer, &buff_ind, 16, "0123456789ABCDEF");
-					}
-					break;
-				case 'p':
-					/* Print a pointer address */
-					{
-						void *ptr = va_arg(args, void *);
-						unsigned long int address = (unsigned long int)ptr;
-						printed_chars += _puts('0', buffer, &buff_ind);
-						printed_chars += _puts('x', buffer, &buff_ind);
-						printed_chars += print_number(address, buffer, &buff_ind, 16, "0123456789abcdef");
-					}
-					break;
-			}
+	UNUSED(is_negative);
+	UNUSED(size);
+
+	if (precision == 0 && ind == BUFF_SIZE - 2 && buffer[ind] == '0')
+		return (0); /* printf(".0d", 0)  no char is printed */
+
+	if (precision > 0 && precision < length)
+		padd = ' ';
+
+	while (precision > length)
+	{
+		buffer[--ind] = '0';
+		length++;
+	}
+
+	if ((flags & F_ZERO) && !(flags & F_MINUS))
+		padd = '0';
+
+	if (width > length)
+	{
+		for (i = 0; i < width - length; i++)
+			buffer[i] = padd;
+
+		buffer[i] = '\0';
+
+		if (flags & F_MINUS) /* Asign extra char to left of buffer [buffer>padd]*/
+		{
+			return (write(1, &buffer[ind], length) + write(1, &buffer[0], i));
+		}
+		else /* Asign extra char to left of padding [padd>buffer]*/
+		{
+			return (write(1, &buffer[0], i) + write(1, &buffer[ind], length));
 		}
 	}
 
-	/* Flush the buffer */
-	write(1, buffer, buff_ind);
-
-	va_end(args);
-
-	return (printed_chars);
+	return (write(1, &buffer[ind], length));
 }
 
+/**
+ * write_pointer - Write a memory address
+ * @buffer: Arrays of chars
+ * @ind: Index at which the number starts in the buffer
+ * @length: Length of number
+ * @width: Width specifier
+ * @flags: Flags specifier
+ * @padd: Char representing the padding
+ * @extra_c: Char representing extra char
+ * @padd_start: Index at which padding should start
+ *
+ * Return: Number of written chars.
+ */
+int write_pointer(char buffer[], int ind, int length,
+	int width, int flags, char padd, char extra_c, int padd_start)
+{
+	int i;
+
+	if (width > length)
+	{
+		for (i = 3; i < width - length + 3; i++)
+			buffer[i] = padd;
+		buffer[i] = '\0';
+		if (flags & F_MINUS && padd == ' ')/* Asign extra char to left of buffer */
+		{
+			buffer[--ind] = 'x';
+			buffer[--ind] = '0';
+			if (extra_c)
+				buffer[--ind] = extra_c;
+			return (write(1, &buffer[ind], length) + write(1, &buffer[3], i - 3));
+		}
+		else if (!(flags & F_MINUS) && padd == ' ')/* extra char to left of buffer */
+		{
+			buffer[--ind] = 'x';
+			buffer[--ind] = '0';
+			if (extra_c)
+				buffer[--ind] = extra_c;
+			return (write(1, &buffer[3], i - 3) + write(1, &buffer[ind], length));
+		}
+		else if (!(flags & F_MINUS) && padd == '0')/* extra char to left of padd */
+		{
+			if (extra_c)
+				buffer[--padd_start] = extra_c;
+			buffer[1] = '0';
+			buffer[2] = 'x';
+			return (write(1, &buffer[padd_start], i - padd_start) +
+				write(1, &buffer[ind], length - (1 - padd_start) - 2));
+		}
+	}
+	buffer[--ind] = 'x';
+	buffer[--ind] = '0';
+	if (extra_c)
+		buffer[--ind] = extra_c;
+	return (write(1, &buffer[ind], BUFF_SIZE - ind - 1));
+}

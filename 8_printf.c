@@ -1,62 +1,51 @@
-#include <stdio.h>
-#include <unistd.h>
 #include "main.h"
-#include <stdarg.h>
-
-#define BUFF_SIZE 1024
-
 /**
- * _puts - ...
- * @str: ...
- * @buffer: ...
- * @buff_ind: ...
- *
- * Return: 0
+ * handle_print - Prints an argument based on its type
+ * @fmt: Formatted string in which to print the arguments.
+ * @list: List of arguments to be printed.
+ * @ind: ind.
+ * @buffer: Buffer array to handle print.
+ * @flags: Calculates active flags
+ * @width: get width.
+ * @precision: Precision specification
+ * @size: Size specifier
+ * Return: 1 or 2;
  */
-int _puts(char c, char *buffer, int *buff_ind)
+int handle_print(const char *fmt, int *ind, va_list list, char buffer[],
+	int flags, int width, int precision, int size)
 {
-	int i = 0;
-	while (c[i] != '\0')
+	int i, unknow_len = 0, printed_chars = -1;
+	fmt_t fmt_types[] = {
+		{'c', print_char}, {'s', print_string}, {'%', print_percent},
+		{'i', print_int}, {'d', print_int}, {'b', print_binary},
+		{'u', print_unsigned}, {'o', print_octal}, {'x', print_hexadecimal},
+		{'X', print_hexa_upper}, {'p', print_pointer}, {'S', print_non_printable},
+		{'r', print_reverse}, {'R', print_rot13string}, {'\0', NULL}
+	};
+	for (i = 0; fmt_types[i].fmt != '\0'; i++)
+		if (fmt[*ind] == fmt_types[i].fmt)
+			return (fmt_types[i].fn(list, buffer, flags, width, precision, size));
+
+	if (fmt_types[i].fmt == '\0')
 	{
-		if (*buff_ind == BUFF_SIZE)
+		if (fmt[*ind] == '\0')
+			return (-1);
+		unknow_len += write(1, "%%", 1);
+		if (fmt[*ind - 1] == ' ')
+			unknow_len += write(1, " ", 1);
+		else if (width)
 		{
-			write(1, buffer, *buff_ind);
-			*buff_ind = 0;
+			--(*ind);
+			while (fmt[*ind] != ' ' && fmt[*ind] != '%')
+				--(*ind);
+			if (fmt[*ind] == ' ')
+				--(*ind);
+			return (1);
 		}
-		buffer[(*buff_ind)++] = c[i++];
+		unknow_len += write(1, &fmt[*ind], 1);
+		return (unknow_len);
 	}
-	return (i);
-}
-
-/**
- * _printf - ...
- * @format: ...
- *
- * Return: ...
- */
-int _printf(const char *format, ...)
-{
-	int i, printed_chars = 0, buff_ind = 0;
-	va_list args;
-	char buffer[BUFF_SIZE];
-
-	va_start(args, format);
-
-	for (i = 0; format && format[i] != '\0'; i++)
-	{
-		if (format[i] != '%')
-		{
-			printed_chars += _puts(*format[i], buffer, &buff_ind);
-			while (format[i] != '\0' && format[i] != '%')
-				i++;
-			i--;
-		}
-		else
-
-	}
-
-	write(1, buffer, buff_ind);
-	va_end(args);
-
 	return (printed_chars);
 }
+
+
